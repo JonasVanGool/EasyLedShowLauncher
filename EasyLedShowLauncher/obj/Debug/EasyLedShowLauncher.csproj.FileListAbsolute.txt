@@ -1,0 +1,11 @@
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\bin\Debug\EasyLedShowLauncher.exe.config
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\obj\Debug\EasyLedShowLauncher.csprojResolveAssemblyReference.cache
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\obj\Debug\EasyLedShowLauncher.EasyLedShowLauncher.resources
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\obj\Debug\EasyLedShowLauncher.Properties.Resources.resources
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\obj\Debug\EasyLedShowLauncher.csproj.GenerateResource.Cache
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\bin\Debug\EasyLedShowLauncher.exe
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\bin\Debug\EasyLedShowLauncher.pdb
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\obj\Debug\EasyLedShowLauncher.exe
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\obj\Debug\EasyLedShowLauncher.pdb
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\bin\Debug\Newtonsoft.Json.dll
+c:\users\2425\documents\visual studio 2013\Projects\EasyLedShowLauncher\EasyLedShowLauncher\bin\Debug\Newtonsoft.Json.xml

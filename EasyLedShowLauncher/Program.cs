@@ -30,8 +30,7 @@ namespace EasyLedShowLauncher
             else
             {
                 Application.Run(new EasyLedShowLauncher());
-            }
-            
+            }         
         }
     }
 }

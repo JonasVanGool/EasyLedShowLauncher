@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EasyLedShowLauncher));
             this.cmbComports = new System.Windows.Forms.ComboBox();
             this.cmbMidiDevices = new System.Windows.Forms.ComboBox();
             this.lblComport = new System.Windows.Forms.Label();
@@ -46,6 +47,7 @@
             this.lblReceivedBlock = new System.Windows.Forms.Label();
             this.pgbLaunch = new System.Windows.Forms.ProgressBar();
             this.btnCancel = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // cmbComports
@@ -170,6 +172,7 @@
             this.txtJinxProgram.Name = "txtJinxProgram";
             this.txtJinxProgram.Size = new System.Drawing.Size(247, 20);
             this.txtJinxProgram.TabIndex = 13;
+            this.txtJinxProgram.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // btnBrowseProgram
             // 
@@ -209,11 +212,21 @@
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
             // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(183, 134);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(137, 13);
+            this.label6.TabIndex = 18;
+            this.label6.Text = "Jonas Van Gool 2016 V 1.0";
+            // 
             // EasyLedShowLauncher
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(503, 140);
+            this.ClientSize = new System.Drawing.Size(503, 156);
+            this.Controls.Add(this.label6);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.pgbLaunch);
             this.Controls.Add(this.lblReceivedBlock);
@@ -232,6 +245,7 @@
             this.Controls.Add(this.lblComport);
             this.Controls.Add(this.cmbMidiDevices);
             this.Controls.Add(this.cmbComports);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "EasyLedShowLauncher";
             this.Text = "EasyLedShow Launcher";
             this.ResumeLayout(false);
@@ -259,6 +273,7 @@
         private System.Windows.Forms.Label lblReceivedBlock;
         private System.Windows.Forms.ProgressBar pgbLaunch;
         private System.Windows.Forms.Button btnCancel;
+        private System.Windows.Forms.Label label6;
     }
 }
 

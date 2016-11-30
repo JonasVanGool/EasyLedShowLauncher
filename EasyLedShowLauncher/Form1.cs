@@ -14,6 +14,7 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace EasyLedShowLauncher
 {
@@ -26,18 +27,26 @@ namespace EasyLedShowLauncher
         protected static extern int midiOutGetDevCaps(int deviceID,
             ref MidiOutCaps caps, int sizeOfMidiOutCaps);
 
+        private const int SW_MAXIMIZE = 3;
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+
         Thread processDataThread;
         Thread launchThread;
         SerialPort dmxDataPort;
         Stopwatch launchStopWatch;
+        bool blockProcessData = false;
         bool allowProcessData = true;
         bool allowLaunch = true;
+        SavedSettings workingSettings;
 
         // This delegate enables asynchronous calls for setting
         // the text property on a TextBox control.
         delegate void SetProgressBarCallback(int value);
         delegate void SetReceiveLabelCallback(Color value);
-        delegate void SetLaunchCallBack();
+
+
         public struct MidiOutCaps
         {
             #region MidiOutCaps Members
@@ -105,6 +114,7 @@ namespace EasyLedShowLauncher
         {
             public string comPortName { get; set; }
             public string midiDeviceName { get; set; }
+            public int midiDeviceIdx { get; set; }
             public string launchDelay { get; set; }
             public string jinxFile { get; set; }
             public string jinxProgram { get; set; }
@@ -112,50 +122,61 @@ namespace EasyLedShowLauncher
 
         public EasyLedShowLauncher(string filePath = null)
         {
-            filePath = @"C:\Users\2425\Desktop\test.els";
-            SavedSettings tempSettings = new SavedSettings();
+            //filePath = @"C:\Users\2425\Desktop\launch1.els";
+            workingSettings = new SavedSettings();
             if (filePath != null)
             {
-                tempSettings = loadSettings(filePath);
+                workingSettings = loadSettings(filePath);
             }
 
             InitializeComponent();
 
-            InitializeComports(tempSettings);
+            InitializeComports(workingSettings);
 
-            InitializeMidiDevices(tempSettings);
+            InitializeMidiDevices(workingSettings);
 
-            InitializeLaunchDelay(tempSettings);
+            InitializeLaunchDelay(workingSettings);
 
-            InitializeJINXFile(tempSettings);
+            InitializeJINXFile(workingSettings);
 
-            InitializeJINXProgram(tempSettings);
+            InitializeJINXProgram(workingSettings);
+
+            dmxDataPort = new SerialPort();
 
             this.FormClosing += EasyLedShowLauncher_FormClosing;
+
+            //Auto Launch
+            if (filePath != null)
+            {
+                StartLaunch();
+            }
         }
 
 
         void CloseData()
         {
             // Stop process thread
+            blockProcessData = false;
             allowProcessData = false;
-            if (processDataThread != null)
-                while (processDataThread.IsAlive) { }
 
-            // Stop launche thread
+            if (processDataThread != null)
+            {
+                while (processDataThread.IsAlive) { }
+            }
+
+
+            // Stop launch thread
             allowLaunch = false;
             if (launchThread != null)
-                while (launchThread.IsAlive) { }
+            {
+                while (launchThread.IsAlive){}
+            }
 
             // Close midi device
             MidiPlayer.CloseMidi();
 
             // Close serial prot
-            if (dmxDataPort != null)
-            {
-                if (dmxDataPort.IsOpen)
-                    dmxDataPort.Close();
-            }
+            CloseComPort();
         }
 
         void EasyLedShowLauncher_FormClosing(object sender, FormClosingEventArgs e)
@@ -275,6 +296,7 @@ namespace EasyLedShowLauncher
                     saveSettings.launchDelay = txtLaunchDelay.Text;
                     saveSettings.jinxFile = txtJinxFilePath.Text;
                     saveSettings.jinxProgram = txtJinxProgram.Text;
+                    saveSettings.midiDeviceIdx = GetMidiDeviceIndex(saveSettings.midiDeviceName);
                     String json = JsonConvert.SerializeObject(saveSettings);
                     // write variables
                     stream.Write(json);
@@ -295,13 +317,13 @@ namespace EasyLedShowLauncher
             }
         }
 
-        private bool launcheTest(){
+        private bool launchTest(){
             // Check comport
+            GetGUIData();
             try
             {
-                SerialPort testPort = new SerialPort((string)cmbComports.SelectedItem, 250000, Parity.None, 8, StopBits.Two);
-                testPort.Open();
-                testPort.Close();
+                OpenComPort();
+                CloseComPort();
             }
             catch (Exception e1)
             {
@@ -312,7 +334,7 @@ namespace EasyLedShowLauncher
             // Check midi data
             try
             {
-                MidiPlayer.OpenMidi(cmbMidiDevices.SelectedIndex);
+                MidiPlayer.OpenMidi(workingSettings.midiDeviceIdx);
                 MidiPlayer.CloseMidi();
             }
             catch (Exception e1)
@@ -348,21 +370,11 @@ namespace EasyLedShowLauncher
             return true;
         }
 
-        private void launch()
+        private void StartProcess()
         {
-            // Open serial port
-            dmxDataPort = new SerialPort((string)cmbComports.SelectedItem, 250000, Parity.None, 8, StopBits.Two);
-            dmxDataPort.ReadTimeout = 500;
-            dmxDataPort.WriteTimeout = 500;
-            dmxDataPort.Open();
-
-            // Open midi device
-            MidiPlayer.OpenMidi(cmbMidiDevices.SelectedIndex);
-
             // Start Receive thread
             allowProcessData = true;
-            processDataThread = new Thread(processData);
-            processDataThread.Start();
+            blockProcessData = false;
 
             // Open jinx!
             ProcessStartInfo startInfo = new ProcessStartInfo();
@@ -370,10 +382,20 @@ namespace EasyLedShowLauncher
             startInfo.Arguments = @"-s1 " + txtJinxFilePath.Text;
             startInfo.WindowStyle = ProcessWindowStyle.Maximized;
             Process.Start(startInfo);
+            Thread.Sleep(2000);
+            var p = System.Diagnostics.Process.GetProcessesByName("jinx").FirstOrDefault();
+            if (p != null)
+            {
+                ShowWindow(p.MainWindowHandle, SW_MAXIMIZE);
+            }
+
         }
 
         private void processData()
         {
+            // Block process data
+            while (blockProcessData) { }
+
             byte inByte;
             byte[] dataBlock = new byte[8];
             const int STATE_WAIT_SEQUENCE = 0, STATE_READ_DATA = 1;
@@ -382,12 +404,13 @@ namespace EasyLedShowLauncher
             int sequenceCounter = 0;
             byte preStrobe = 0;
             byte preMaster = 255;
+            byte workingStrobeByte = 0;
             Color debugColor = Color.Red;
             Stopwatch debugUpdater = new Stopwatch();
             debugUpdater.Start();
             while (allowProcessData)
             {
-                //Update debyg
+                //Update debug
                 if (debugUpdater.ElapsedMilliseconds > 100)
                 {
                     SetBackgroundLabel(debugColor);
@@ -423,19 +446,23 @@ namespace EasyLedShowLauncher
                                 STATE = STATE_WAIT_SEQUENCE;
                                 dataCounter = 0;
 
-                                // Make data correction when rapid scene switch
+
                                 if (dataBlock[0] == 255)
                                 {
                                     dataBlock[0] = preMaster;
                                 }
 
-                                if (dataBlock[1] == 0)
+                                if (dataBlock[1] == 255)
                                 {
-                                    dataBlock[1] = preStrobe;
+                                    workingStrobeByte = 1;
+                                }else{
+                                    workingStrobeByte = 0;
                                 }
 
-                                MidiPlayer.Play(new Controller(0, 0, (byte)6, (byte)(dataBlock[0] / 2)));
-                                MidiPlayer.Play(new Controller(0, 0, (byte)5, (byte)(dataBlock[1] / 2)));
+                                if (dataBlock[1] == 0 && preStrobe == 1)
+                                    workingStrobeByte = 1;
+                                MidiPlayer.Play(new Controller(0, 0, (byte)6, Math.Min((byte)(dataBlock[0] / 2),(byte)110)));
+                                MidiPlayer.Play(new Controller(0, 0, (byte)5, (byte)workingStrobeByte));
                                 MidiPlayer.Play(new Controller(0, 0, (byte)0, (byte)(dataBlock[2] / 2)));
                                 MidiPlayer.Play(new Controller(0, 0, (byte)1, (byte)(dataBlock[3] / 2)));
                                 MidiPlayer.Play(new Controller(0, 0, (byte)4, (byte)(dataBlock[4] / 2)));
@@ -444,8 +471,7 @@ namespace EasyLedShowLauncher
                                 MidiPlayer.Play(new Controller(0, 0, (byte)7, (byte)(dataBlock[7] / 2)));
 
                                 preMaster = dataBlock[0];
-                                preStrobe = dataBlock[1];
-
+                                preStrobe = workingStrobeByte;
                                 debugColor = Color.Green;
                             }
                             break;
@@ -458,16 +484,7 @@ namespace EasyLedShowLauncher
 
         private void btnLaunch_Click(object sender, EventArgs e)
         {
-            if (launcheTest())
-            {
-                allowLaunch = true;
-                launchThread = new Thread(launchStart);
-                launchThread.Start();
-                launchStopWatch = new Stopwatch();
-                launchStopWatch.Start();
-                btnLaunch.Enabled = false;
-                btnCancel.Enabled = true;
-            }
+            StartLaunch();
         }
 
         private void btnBrowseProgram_Click(object sender, EventArgs e)
@@ -494,15 +511,16 @@ namespace EasyLedShowLauncher
             int value;
             while (allowLaunch)
             {
-                tempvalue = ((double)launchStopWatch.Elapsed.Seconds / double.Parse(txtLaunchDelay.Text));
+                Thread.Sleep(100);
+                tempvalue = ((double)launchStopWatch.Elapsed.Seconds / double.Parse(workingSettings.launchDelay));
                 value = (int)(100.0 * tempvalue);
                 SetProgressBar(Math.Min(value,100));
-                Thread.Sleep(20);
                 if (tempvalue > 1)
                 {
                     allowLaunch = false;
-                    SetLaunch();
+                    StartProcess();
                 }
+
             }
         }
 
@@ -522,7 +540,7 @@ namespace EasyLedShowLauncher
             if (this.pgbLaunch.InvokeRequired)
             {
                 SetProgressBarCallback d = new SetProgressBarCallback(SetProgressBar);
-                this.Invoke(d, new object[] { Value });
+                this.BeginInvoke(d, new object[] { Value });
             }
             else
             {
@@ -535,10 +553,10 @@ namespace EasyLedShowLauncher
             // InvokeRequired required compares the thread ID of the
             // calling thread to the thread ID of the creating thread.
             // If these threads are different, it returns true.
-            if (this.pgbLaunch.InvokeRequired)
+            if (this.lblReceivedBlock.InvokeRequired)
             {
                 SetReceiveLabelCallback d = new SetReceiveLabelCallback(SetBackgroundLabel);
-                this.Invoke(d, new object[] { Value });
+                this.BeginInvoke(d, new object[] { Value });
             }
             else
             {
@@ -546,21 +564,82 @@ namespace EasyLedShowLauncher
             }
         }
 
-        private void SetLaunch()
+        private void OpenComPort()
         {
-            // InvokeRequired required compares the thread ID of the
-            // calling thread to the thread ID of the creating thread.
-            // If these threads are different, it returns true.
-            if (this.pgbLaunch.InvokeRequired)
+            if (dmxDataPort == null)
             {
-                SetLaunchCallBack d = new SetLaunchCallBack(SetLaunch);
-                this.Invoke(d, new object[] {  });
+                return;
             }
-            else
-            {
-                launch();
-            }
+            // Open serial port
+            dmxDataPort.PortName = workingSettings.comPortName;
+            dmxDataPort.BaudRate = 250000;
+            dmxDataPort.Parity = Parity.None;
+            dmxDataPort.DataBits = 8;
+            dmxDataPort.StopBits = StopBits.Two;
+            dmxDataPort.ReadTimeout = 500;
+            dmxDataPort.WriteTimeout = 500;
+            dmxDataPort.Open();
         }
 
+        private void CloseComPort()
+        {
+            if (dmxDataPort == null)
+            {
+                return;
+            }
+            Thread.Sleep(100);
+            dmxDataPort.Close();
+        }
+
+        private void GetGUIData()
+        {
+
+            workingSettings.comPortName = (string)cmbComports.SelectedItem;
+            workingSettings.jinxFile = txtJinxFilePath.Text;
+            workingSettings.jinxProgram = txtJinxProgram.Text;
+            workingSettings.launchDelay = txtLaunchDelay.Text;
+            workingSettings.midiDeviceName = (string)cmbMidiDevices.SelectedItem;
+            workingSettings.midiDeviceIdx = GetMidiDeviceIndex(workingSettings.midiDeviceName);
+        }
+
+        private int GetMidiDeviceIndex(string name)
+        {
+            MidiOutCaps caps = new MidiOutCaps();
+            for (int c = 0; c < midiOutGetNumDevs(); c++)
+            {
+                int result = midiOutGetDevCaps(c, ref caps, Marshal.SizeOf(caps));
+                if (caps.name == name)
+                    return c;
+            }
+            return -1;
+        }
+
+        private void StartLaunch()
+        {
+            if (launchTest())
+            {
+
+                //Open comport
+                OpenComPort();
+
+                // Open midi device
+                MidiPlayer.OpenMidi(workingSettings.midiDeviceIdx);
+
+                allowLaunch = true;
+                launchThread = new Thread(launchStart);
+                launchThread.Start();
+                launchStopWatch = new Stopwatch();
+                launchStopWatch.Start();
+
+                allowProcessData = false;
+                blockProcessData = true;
+                processDataThread = new Thread(processData);
+                processDataThread.Start();
+
+                btnLaunch.Enabled = false;
+                btnCancel.Enabled = true;
+            }
+        }
     }
+
 }

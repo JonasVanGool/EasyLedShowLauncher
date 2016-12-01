@@ -52,6 +52,8 @@
             // 
             // cmbComports
             // 
+            this.cmbComports.BackColor = System.Drawing.Color.Gray;
+            this.cmbComports.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.cmbComports.FormattingEnabled = true;
             this.cmbComports.Location = new System.Drawing.Point(92, 12);
             this.cmbComports.Name = "cmbComports";
@@ -60,6 +62,8 @@
             // 
             // cmbMidiDevices
             // 
+            this.cmbMidiDevices.BackColor = System.Drawing.Color.Gray;
+            this.cmbMidiDevices.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.cmbMidiDevices.FormattingEnabled = true;
             this.cmbMidiDevices.Location = new System.Drawing.Point(218, 12);
             this.cmbMidiDevices.Name = "cmbMidiDevices";
@@ -69,6 +73,7 @@
             // lblComport
             // 
             this.lblComport.AutoSize = true;
+            this.lblComport.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.lblComport.Location = new System.Drawing.Point(0, 15);
             this.lblComport.Name = "lblComport";
             this.lblComport.Size = new System.Drawing.Size(86, 13);
@@ -78,6 +83,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
+            this.label1.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.label1.Location = new System.Drawing.Point(183, 15);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(29, 13);
@@ -86,6 +92,8 @@
             // 
             // txtLaunchDelay
             // 
+            this.txtLaunchDelay.BackColor = System.Drawing.Color.Gray;
+            this.txtLaunchDelay.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.txtLaunchDelay.Location = new System.Drawing.Point(434, 12);
             this.txtLaunchDelay.Name = "txtLaunchDelay";
             this.txtLaunchDelay.Size = new System.Drawing.Size(33, 20);
@@ -95,6 +103,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
+            this.label2.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.label2.Location = new System.Drawing.Point(473, 16);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(29, 13);
@@ -104,6 +113,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
+            this.label3.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.label3.Location = new System.Drawing.Point(354, 16);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(74, 13);
@@ -112,6 +122,8 @@
             // 
             // txtJinxFilePath
             // 
+            this.txtJinxFilePath.BackColor = System.Drawing.Color.Gray;
+            this.txtJinxFilePath.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.txtJinxFilePath.Location = new System.Drawing.Point(92, 43);
             this.txtJinxFilePath.Name = "txtJinxFilePath";
             this.txtJinxFilePath.Size = new System.Drawing.Size(247, 20);
@@ -121,6 +133,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
+            this.label4.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.label4.Location = new System.Drawing.Point(34, 46);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(52, 13);
@@ -160,6 +173,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
+            this.label5.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.label5.Location = new System.Drawing.Point(9, 75);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(77, 13);
@@ -168,6 +182,8 @@
             // 
             // txtJinxProgram
             // 
+            this.txtJinxProgram.BackColor = System.Drawing.Color.Gray;
+            this.txtJinxProgram.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.txtJinxProgram.Location = new System.Drawing.Point(92, 72);
             this.txtJinxProgram.Name = "txtJinxProgram";
             this.txtJinxProgram.Size = new System.Drawing.Size(247, 20);
@@ -215,6 +231,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
+            this.label6.ForeColor = System.Drawing.SystemColors.ButtonShadow;
             this.label6.Location = new System.Drawing.Point(183, 134);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(137, 13);
@@ -225,6 +242,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(503, 156);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.btnCancel);

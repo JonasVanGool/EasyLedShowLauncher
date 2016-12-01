@@ -280,7 +280,8 @@ namespace EasyLedShowLauncher
             SaveFileDialog fileDialog = new SaveFileDialog();
             fileDialog.Filter = "els files (*.els)|*.els|All files (*.*)|*.*";
             fileDialog.AddExtension = true;
-            fileDialog.FilterIndex = 2;
+            fileDialog.DefaultExt = "els";
+            fileDialog.FilterIndex = 1;
             fileDialog.RestoreDirectory = true;
 
             if (fileDialog.ShowDialog() == DialogResult.OK)

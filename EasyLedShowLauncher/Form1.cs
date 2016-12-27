@@ -20,6 +20,9 @@ namespace EasyLedShowLauncher
 {
     public partial class EasyLedShowLauncher : Form
     {
+        private const int NR_MAIN_PROGRAMS = 40;
+        private const int NR_SLIDERS = 8;
+
         [DllImport("winmm.dll")]
         protected static extern int midiOutGetNumDevs();
 
@@ -30,12 +33,23 @@ namespace EasyLedShowLauncher
         private const int SW_MAXIMIZE = 3;
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private static System.Timers.Timer timer;
+        private static int secondsElapsed = 0;
+        private int[] dmxSubEffects;
+
+        private bool[] thresEnabled;
+        private bool[] thresActive;
+        private byte[] thresFreeValue;
+        private byte[] thresPreValue;
+        private int[] thresActivateTime;
+        private long[] thresOKTime;
 
 
         Thread processDataThread;
         Thread launchThread;
         SerialPort dmxDataPort;
         Stopwatch launchStopWatch;
+        Stopwatch thresStopWatch;
         bool blockProcessData = false;
         bool allowProcessData = true;
         bool allowLaunch = true;
@@ -122,7 +136,7 @@ namespace EasyLedShowLauncher
 
         public EasyLedShowLauncher(string filePath = null)
         {
-            //filePath = @"C:\Users\2425\Desktop\launch1.els";
+            //filePath = @"C:\Users\2425\Desktop\newyear.els";
             workingSettings = new SavedSettings();
             if (filePath != null)
             {
@@ -143,6 +157,50 @@ namespace EasyLedShowLauncher
 
             dmxDataPort = new SerialPort();
 
+            dmxSubEffects = new int[NR_MAIN_PROGRAMS];
+            for (int i = 0; i < dmxSubEffects.Length; i++)
+            {
+                if(i == 0){
+                    dmxSubEffects[i] = 4;
+                }
+                else if (i == 1)
+                {
+                    dmxSubEffects[i] = 4;
+                }
+                else
+                {
+                    dmxSubEffects[i] = 0;
+                }         
+            }
+
+
+            thresEnabled = new bool[NR_SLIDERS];
+            thresActive = new bool[NR_SLIDERS];
+            thresFreeValue = new byte[NR_SLIDERS];
+            thresOKTime = new long[NR_SLIDERS];
+            thresActivateTime = new int[NR_SLIDERS];
+            thresPreValue = new byte[NR_SLIDERS];
+
+            thresEnabled[0] = false;
+            thresEnabled[1] = false;
+            thresEnabled[2] = true;
+            thresEnabled[3] = false;
+            thresEnabled[4] = false;
+            thresEnabled[5] = false;
+            thresEnabled[6] = true;
+            thresEnabled[7] = false;
+            for(int i =0; i<NR_SLIDERS; i++){
+                if(thresEnabled[i]){
+                    thresFreeValue[i] = 12;
+                    thresActivateTime[i] = 2000;
+                    thresActive[i] = false;
+                }
+            }
+
+            timer = new System.Timers.Timer(1000);
+            timer.Elapsed += OnTimedEvent;
+
+
             this.FormClosing += EasyLedShowLauncher_FormClosing;
 
             //Auto Launch
@@ -155,6 +213,11 @@ namespace EasyLedShowLauncher
 
         void CloseData()
         {
+            timer.Stop();
+            timer.Enabled = false;
+            secondsElapsed = 0;
+            SetProgressBar(0);
+
             // Stop process thread
             blockProcessData = false;
             allowProcessData = false;
@@ -164,19 +227,41 @@ namespace EasyLedShowLauncher
                 while (processDataThread.IsAlive) { }
             }
 
-
-            // Stop launch thread
-            allowLaunch = false;
-            if (launchThread != null)
-            {
-                while (launchThread.IsAlive){}
-            }
-
             // Close midi device
             MidiPlayer.CloseMidi();
 
             // Close serial prot
             CloseComPort();
+        }
+
+        private void OnTimedEvent(Object source, System.Timers.ElapsedEventArgs e)
+        {
+            secondsElapsed += 1;
+
+            if (secondsElapsed > double.Parse(workingSettings.launchDelay))
+            {
+                timer.Stop();
+                timer.Enabled = false;
+                secondsElapsed = 0;
+                //launch program
+                if (launchTest())
+                {
+
+                    //Open comport
+                    OpenComPort();
+
+                    // Open midi device
+                    MidiPlayer.OpenMidi(workingSettings.midiDeviceIdx);
+                    
+                    processDataThread = new Thread(processData);
+                    processDataThread.Start();
+                    StartProcess();
+                }
+            }
+            else
+            {
+                SetProgressBar((int)(100.0 * (double)secondsElapsed / double.Parse(workingSettings.launchDelay)));
+            }
         }
 
         void EasyLedShowLauncher_FormClosing(object sender, FormClosingEventArgs e)
@@ -319,8 +404,6 @@ namespace EasyLedShowLauncher
         }
 
         private bool launchTest(){
-            // Check comport
-            GetGUIData();
             try
             {
                 OpenComPort();
@@ -373,6 +456,9 @@ namespace EasyLedShowLauncher
 
         private void StartProcess()
         {
+            // start threshold time
+            thresStopWatch = new Stopwatch();
+            thresStopWatch.Start();
             // Start Receive thread
             allowProcessData = true;
             blockProcessData = false;
@@ -406,6 +492,7 @@ namespace EasyLedShowLauncher
             byte preStrobe = 0;
             byte preMaster = 255;
             byte workingStrobeByte = 0;
+            byte workingMasterByte = 0;
             Color debugColor = Color.Red;
             Stopwatch debugUpdater = new Stopwatch();
             debugUpdater.Start();
@@ -443,14 +530,17 @@ namespace EasyLedShowLauncher
                             dataCounter++;
                             if (dataCounter == 8)
                             {
-                                
                                 STATE = STATE_WAIT_SEQUENCE;
                                 dataCounter = 0;
 
-
+                                // Lock strobe and master when switching scenes
                                 if (dataBlock[0] == 255)
                                 {
-                                    dataBlock[0] = preMaster;
+                                    workingMasterByte = preMaster;
+                                }
+                                else
+                                {
+                                    workingMasterByte = dataBlock[0];
                                 }
 
                                 if (dataBlock[1] == 255)
@@ -462,17 +552,67 @@ namespace EasyLedShowLauncher
 
                                 if (dataBlock[1] == 0 && preStrobe == 1)
                                     workingStrobeByte = 1;
-                                MidiPlayer.Play(new Controller(0, 0, (byte)6, Math.Min((byte)(dataBlock[0] / 2),(byte)110)));
+
+                                // Apply threshold values
+                                for (int k = 0; k < NR_SLIDERS; k++)
+                                {
+                                    if (thresEnabled[k])
+                                    {
+                                        if (thresActive[k])
+                                        {
+                                            if (Math.Abs(thresPreValue[k] - dataBlock[k]) > thresFreeValue[k])
+                                            {
+                                                thresActive[k] = false;
+                                                thresOKTime[k] = thresStopWatch.ElapsedMilliseconds;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (thresPreValue[k] == dataBlock[k])
+                                            {
+                                                if (thresStopWatch.ElapsedMilliseconds - thresOKTime[k] > thresActivateTime[k])
+                                                {
+                                                    thresActive[k] = true;
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                thresOKTime[k] = thresStopWatch.ElapsedMilliseconds;
+                                                thresPreValue[k] = dataBlock[k];
+                                            }
+                                        }
+                                    }
+                                }
+
+
+                                // Master
+                                MidiPlayer.Play(new Controller(0, 0, (byte)6, Math.Min((byte)(workingMasterByte / 2), (byte)107)));
+                                // Strobo
                                 MidiPlayer.Play(new Controller(0, 0, (byte)5, (byte)workingStrobeByte));
-                                MidiPlayer.Play(new Controller(0, 0, (byte)0, (byte)(dataBlock[2] / 2)));
-                                MidiPlayer.Play(new Controller(0, 0, (byte)1, (byte)(dataBlock[3] / 2)));
-                                MidiPlayer.Play(new Controller(0, 0, (byte)4, (byte)(dataBlock[4] / 2)));
-                                MidiPlayer.Play(new Controller(0, 0, (byte)2, (byte)(dataBlock[5] / 2)));
-                                MidiPlayer.Play(new Controller(0, 0, (byte)3, (byte)(dataBlock[6] / 2)));
+                                // Left effect
+                                int mainLeftEffect = ConvertRange(0, 255, 0, NR_MAIN_PROGRAMS - 1, thresPreValue[2]);
+                                int subLeftEffect = ConvertRange(0, 255, 0, dmxSubEffects[mainLeftEffect], dataBlock[3]);
+                                byte leftEffect = (byte) getEffectNumber(mainLeftEffect,subLeftEffect);
+                                MidiPlayer.Play(new Controller(0, 0, (byte)0, leftEffect));
+                                // Right effect
+                                int mainRightEffect = ConvertRange(0, 255, 0, NR_MAIN_PROGRAMS - 1, thresPreValue[6]);
+                                int subRightEffect = ConvertRange(0, 255, 0, dmxSubEffects[mainRightEffect], dataBlock[5]);
+                                byte rightEffect = (byte) getEffectNumber(mainRightEffect,subRightEffect);
+                                MidiPlayer.Play(new Controller(0, 0, (byte)1, rightEffect));
+
+
+                                // Cross fade
+                                MidiPlayer.Play(new Controller(0, 0, (byte)4, (byte)ConvertRange(0, 255, 0, 127, dataBlock[4])));
+
+                                // Other
                                 MidiPlayer.Play(new Controller(0, 0, (byte)7, (byte)(dataBlock[7] / 2)));
 
-                                preMaster = dataBlock[0];
-                                preStrobe = workingStrobeByte;
+                                if (dataBlock[0] != 255)
+                                    preMaster = workingMasterByte;
+                                if (dataBlock[1] != 0)
+                                    preStrobe = workingStrobeByte;
+
                                 debugColor = Color.Green;
                             }
                             break;
@@ -503,25 +643,6 @@ namespace EasyLedShowLauncher
                 {
                     MessageBox.Show("Error: Could not read file from disk. Original error: " + ex.Message);
                 }
-            }
-        }
-
-        private void launchStart()
-        {
-            double tempvalue;
-            int value;
-            while (allowLaunch)
-            {
-                Thread.Sleep(100);
-                tempvalue = ((double)launchStopWatch.Elapsed.Seconds / double.Parse(workingSettings.launchDelay));
-                value = (int)(100.0 * tempvalue);
-                SetProgressBar(Math.Min(value,100));
-                if (tempvalue > 1)
-                {
-                    allowLaunch = false;
-                    StartProcess();
-                }
-
             }
         }
 
@@ -617,29 +738,38 @@ namespace EasyLedShowLauncher
 
         private void StartLaunch()
         {
-            if (launchTest())
+            btnLaunch.Enabled = false;
+            btnCancel.Enabled = true;
+            GetGUIData();
+            timer.Start();
+        }
+
+        
+        public static int ConvertRange(
+            int originalStart, int originalEnd, // original range
+            int newStart, int newEnd, // desired range
+            int value) // value to convert
+        {
+            double scale = (double)(newEnd - newStart) / (double)(originalEnd - originalStart);
+            return (int)(newStart + ((value - originalStart) * scale));
+        }
+
+        private int getEffectNumber(int maineffect, int subeffect)
+        {
+            int result=0;
+            for (int i = 0; i < dmxSubEffects.Length; i++)
             {
-
-                //Open comport
-                OpenComPort();
-
-                // Open midi device
-                MidiPlayer.OpenMidi(workingSettings.midiDeviceIdx);
-
-                allowLaunch = true;
-                launchThread = new Thread(launchStart);
-                launchThread.Start();
-                launchStopWatch = new Stopwatch();
-                launchStopWatch.Start();
-
-                allowProcessData = false;
-                blockProcessData = true;
-                processDataThread = new Thread(processData);
-                processDataThread.Start();
-
-                btnLaunch.Enabled = false;
-                btnCancel.Enabled = true;
+                if (maineffect == i)
+                {
+                    return result + subeffect + 1;
+                }
+                else
+                {
+                    result++;
+                    result += dmxSubEffects[i];
+                }
             }
+            return 0;
         }
     }
 

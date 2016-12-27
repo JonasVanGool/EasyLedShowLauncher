@@ -236,7 +236,7 @@
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(137, 13);
             this.label6.TabIndex = 18;
-            this.label6.Text = "Jonas Van Gool 2016 V 1.0";
+            this.label6.Text = "Jonas Van Gool 2016 V 1.6";
             // 
             // EasyLedShowLauncher
             // 

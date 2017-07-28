@@ -21,7 +21,7 @@ namespace Toub.Sound.Midi
 		/// <summary>Whether the track can be written without an end of track marker.</summary>
 		private bool _requireEndOfTrack;
 		/// <summary>Collection of MIDI event added to this track.</summary>
-		private MidiEventCollection _events;
+		public MidiEventCollection _events;
 		#endregion
 
 		#region Construction

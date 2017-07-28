@@ -47,13 +47,16 @@ namespace EasyLedShowLauncher
 
         Thread processDataThread;
         Thread launchThread;
+        Thread playMidiFile;
         SerialPort dmxDataPort;
         Stopwatch launchStopWatch;
         Stopwatch thresStopWatch;
         bool blockProcessData = false;
         bool allowProcessData = true;
         bool allowLaunch = true;
+        bool allowPlayMidi = true;
         SavedSettings workingSettings;
+        MidiSequence midiSequence;
 
         // This delegate enables asynchronous calls for setting
         // the text property on a TextBox control.
@@ -208,6 +211,8 @@ namespace EasyLedShowLauncher
             {
                 StartLaunch();
             }
+
+            midiSequence = new MidiSequence(0, 100);
         }
 
 
@@ -770,6 +775,55 @@ namespace EasyLedShowLauncher
                 }
             }
             return 0;
+        }
+
+        private void btnBrowseMidi_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+            fileDialog.Title = "Open MIDI! File";
+            fileDialog.Filter = "MIDI files|*.mid";
+            if (fileDialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    txtMidiFile.Text = fileDialog.FileName;
+                    midiSequence = MidiSequence.Import(txtMidiFile.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error: Could not read file from disk. Original error: " + ex.Message);
+                }
+            }
+        }
+
+        private void btnPlayMidi_Click(object sender, EventArgs e)
+        {
+            // Stop process thread
+            blockProcessData = false;
+            allowProcessData = false;
+
+            if (processDataThread != null)
+            {
+                while (processDataThread.IsAlive) { }
+            }
+
+            playMidiFile = new Thread(playMidi);
+            playMidiFile.Start();
+        }
+
+        private void playMidi()
+        {
+            int notesPlayed = 0;
+            byte tempChannel = 0;
+            byte tempVel = 0;
+            MidiEvent tempEvent;
+            while (allowPlayMidi || midiSequence.GetTracks()[0].Events.Count > notesPlayed)
+            {
+                tempEvent = midiSequence.GetTracks()[0].Events.GetEvent(notesPlayed);
+                Thread.Sleep((int) tempEvent.DeltaTime);
+                MidiPlayer.Play(tempEvent);
+                notesPlayed++;
+            }
         }
     }
 

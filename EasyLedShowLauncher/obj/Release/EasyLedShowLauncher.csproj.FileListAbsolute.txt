@@ -9,3 +9,14 @@ C:\Users\2425\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Relea
 C:\Users\2425\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.pdb
 C:\Users\2425\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\bin\Release\EasyLedShowLauncher.pdb
 C:\Users\2425\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.csprojResolveAssemblyReference.cache
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\bin\Release\EasyLedShowLauncher.exe.config
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\bin\Release\EasyLedShowLauncher.exe
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\bin\Release\EasyLedShowLauncher.pdb
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\bin\Release\Newtonsoft.Json.dll
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\bin\Release\Newtonsoft.Json.xml
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.csprojResolveAssemblyReference.cache
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.EasyLedShowLauncher.resources
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.Properties.Resources.resources
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.csproj.GenerateResource.Cache
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.exe
+C:\Users\John Doe\Documents\GitHub\EasyLedShowLauncher\EasyLedShowLauncher\obj\Release\EasyLedShowLauncher.pdb

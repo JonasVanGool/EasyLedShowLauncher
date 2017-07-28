@@ -94,7 +94,7 @@ namespace Toub.Sound.Midi
 			}
 
 			// Play it from the temporary file
-//			Play(fileName);
+	//		Play(fileName);
 
 			// Remove the temporary file
 			try { File.Delete(fileName); }

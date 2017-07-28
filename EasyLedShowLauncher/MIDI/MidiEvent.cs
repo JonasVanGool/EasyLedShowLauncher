@@ -20,7 +20,7 @@ namespace Toub.Sound.Midi
 	{
 		#region Member Variables
 		/// <summary>The list of MIDI events in the collection.</summary>
-		private ArrayList _events;
+		public ArrayList _events;
 		#endregion
 
 		#region Construction
@@ -114,11 +114,17 @@ namespace Toub.Sound.Midi
 			get { return (MidiEvent)_events[index]; }
 			set { _events[index] = value; }
 		}
-		#endregion
 
-		#region Sorting (internal only)
-		/// <summary>Converts the delta times on all events to from delta times to total times.</summary>
-		internal void ConvertDeltasToTotals()
+        /// <summary>Gets or sets the MIDI event at the specified index into the collection.</summary>
+        public MidiEvent GetEvent (int index)
+        {
+            return (MidiEvent)_events[index];
+        }
+        #endregion
+
+        #region Sorting (internal only)
+        /// <summary>Converts the delta times on all events to from delta times to total times.</summary>
+        internal void ConvertDeltasToTotals()
 		{
 			// Update all delta times to be total times
 			long total = this[0].DeltaTime;
